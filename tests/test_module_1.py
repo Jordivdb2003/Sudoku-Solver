@@ -1,5 +1,5 @@
 from sudoku_solver.cell import Cell
-from sudoku_solver.sudoku import Sudoku
+# from sudoku_solver.sudoku import Sudoku
 
 
 def test_first_cell():
