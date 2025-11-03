@@ -1,5 +1,7 @@
-from sudoku_solver.cell import cell
+from sudoku_solver.cell import Cell
+from sudoku_solver.sudoku import Sudoku
 
 
-first_cell = cell(1)
-print(first_cell)
+def test_first_cell():
+    first_cell = Cell(1)
+    assert first_cell.value == 1
