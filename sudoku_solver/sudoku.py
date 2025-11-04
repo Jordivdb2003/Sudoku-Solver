@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional, Tuple
 from cell import Cell
 import numpy as np
 
@@ -6,6 +6,10 @@ import numpy as np
 class Sudoku:
     def __init__(self, numbers: List[int]):
         self.dimension = int(np.sqrt(len(numbers)))
+        if self.dimension >= 4:
+            self.block_size = int(np.sqrt(self.dimension))
+        else:
+            self.block_size = self.dimension
         self.grid = [
             [Cell(numbers[i * self.dimension + j])
              for j in range(self.dimension)]
@@ -22,15 +26,14 @@ class Sudoku:
         if self.dimension <= 3:
             return self.grid
         else:
-            block_size = int(np.sqrt(self.dimension))
             cells = [
                 [self.grid[i][j] for j in range(
-                    block_col * block_size,
-                    block_size * (block_col + 1)
+                    block_col * self.block_size,
+                    self.block_size * (block_col + 1)
                     )]
                 for i in range(
-                    block_row * block_size,
-                    (block_row + 1) * block_size
+                    block_row * self.block_size,
+                    (block_row + 1) * self.block_size
                     )
             ]
             return cells
@@ -47,20 +50,73 @@ class Sudoku:
             return False
 
         return True
+    
+    def find_empty(self) -> Optional[Tuple[int, int]]:
+        for i in range(self.dimension):
+            for j in range(self.dimension):
+                if self.grid[i][j].value == 0:
+                    return (i,j)
+        return None
+    
+    def find_best_cell(self) -> Optional[Tuple[int, int]]:
+        min_options = float('inf')
+        best_cell = None
+        for row in range(self.dimension):
+            for col in range(self.dimension):
+                if self.grid[row][col].value == 0:
+                    options = [
+                        num for num in range(1, self.dimension + 1)
+                        if self.is_valid(row, col, num)
+                    ]
+                    if len(options) < min_options:
+                        min_options = len(options)
+                        best_cell = (row, col)
+                    if min_options == 1:
+                        return best_cell
+        return best_cell
 
+    def solve(self) -> bool:
+        best = self.find_best_cell()
+        if not best:
+            return True
+        row, col = best
+
+        for num in range(1, self.dimension + 1):
+            if self.is_valid(row, col, num):
+                self.grid[row][col].value = num
+                if self.solve():
+                    return True
+                self.grid[row][col].value = 0
+
+        return False
+
+    def display(self):
+        for i, row in enumerate(self.grid):
+            if i % self.block_size == 0 and i != 0:
+                print ("-" * (self.dimension * 2 + self.block_size - 1))
+            row_str = ""
+            for j, cell in enumerate(row):
+                if j % self.block_size == 0 and j != 0:
+                    row_str += "| "
+                row_str += str(cell) + " "
+            print(row_str)
 
 if __name__ == "__main__":
-    numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9,
-               4, 5, 6, 7, 8, 9, 1, 2, 3,
-               7, 8, 9, 1, 2, 3, 4, 5, 6,
-               2, 3, 4, 5, 6, 7, 8, 9, 1,
-               5, 6, 7, 8, 9, 1, 2, 3, 4,
-               8, 9, 1, 2, 3, 4, 5, 6, 7,
-               3, 4, 5, 6, 7, 8, 9, 1, 2,
-               6, 7, 8, 9, 1, 2, 3, 4, 5,
-               9, 1, 2, 3, 4, 5, 6, 7, 8
+    numbers = [0, 5, 0, 8, 0, 2, 0, 0, 7,
+               0, 9, 7, 6, 1, 0, 4, 0, 0,
+               3, 0, 0, 0, 4, 0, 0, 2, 1,
+               0, 8, 2, 7, 0, 0, 5, 0, 0,
+               0, 0, 0, 0, 5, 9, 8, 4, 0,
+               0, 0, 6, 3, 0, 0, 0, 0, 0, 
+               8, 0, 0, 0, 0, 6, 0, 9, 2,
+               4, 3, 0, 9, 0, 0, 0, 6, 0,
+               6, 0, 0, 1, 7, 5, 3, 8, 0
                ]
-    first_sudoku = Sudoku(numbers)
-    for i in range(3):
-        for j in range(3):
-            print(first_sudoku.get_block(i, j))
+    sudoku = Sudoku(numbers)
+    print("Original Puzzle:")
+    sudoku.display()
+    if sudoku.solve():
+        print("\nSolved Puzzle:")
+        sudoku.display()
+    else:
+        print("No solution exists")
